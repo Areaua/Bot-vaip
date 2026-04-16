@@ -1,13 +1,108 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  telegramId   BigInt      @unique
+  username     String?
+  firstName    String?
+  bonusBalance Int         @default(0)
+  referralCode String      @unique @default(cuid())
+  referredById Int?
+  referredBy   User?       @relation("Referrals", fields: [referredById], references: [id])
+  referrals    User[]      @relation("Referrals")
+  spinLogs     SpinLog[]
+  orders       Order[]
+  promoCodes   UserPromo[]
+  createdAt    DateTime    @default(now())
+}
+
+model WheelPrize {
+  id          Int        @id @default(autoincrement())
+  label       String
+  type        PrizeType
+  value       Int
+  probability Float
+  isActive    Boolean    @default(true)
+  spinLogs    SpinLog[]
+}
+
+enum PrizeType {
+  DISCOUNT
+  BONUS_POINTS
+  FREE_DELIVERY
+  PROMO_CODE
+  PHYSICAL_PRODUCT
+}
+
+model SpinLog {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+  prizeId   Int
+  prize     WheelPrize @relation(fields: [prizeId], references: [id])
+  promoCode String?
+  createdAt DateTime   @default(now())
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  price       Int
+  category    Category
+  imageUrl    String?
+  inStock     Boolean     @default(true)
+  orderItems  OrderItem[]
+}
+
+enum Category {
+  LIQUID
+  DISPOSABLE
+  ACCESSORY
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id])
+  items      OrderItem[]
+  totalPrice Int
+  discount   Int         @default(0)
+  promoCode  String?
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Int
+}
+
+model UserPromo {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  code      String   @unique
+  discount  Int
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
 }
