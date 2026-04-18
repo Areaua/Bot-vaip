@@ -15,3 +15,50 @@ html, body, #root {
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
+
+/* Hover effects */
+.btn {
+  transition: filter 0.18s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.btn:hover {
+  filter: brightness(0.82);
+  transform: scale(0.97);
+}
+.btn:active {
+  transform: scale(0.93);
+}
+
+/* Logo pulse */
+.logo-icon {
+  animation: logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+}
+
+/* Neon glow on active nav item */
+.nav-dot {
+  animation: dotGlow 2s ease-in-out infinite;
+}
+@keyframes dotGlow {
+  0%, 100% { box-shadow: 0 0 4px #22C55E; }
+  50%       { box-shadow: 0 0 10px #22C55E, 0 0 20px rgba(34,197,94,0.4); }
+}
+
+/* Wheel spin button pulse when available */
+.spin-btn-ready {
+  animation: spinReady 2s ease-in-out infinite;
+}
+@keyframes spinReady {
+  0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.5); }
+  50%       { box-shadow: 0 0 35px rgba(34,197,94,0.9), 0 0 60px rgba(34,197,94,0.3); }
+}
+
+/* Horizontal scroll без скроллбара */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar { display: none; }

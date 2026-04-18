@@ -26,6 +26,7 @@ export default function BottomNav({ active, onChange }: Props) {
         <button
           key={item.id}
           onClick={() => onChange(item.id)}
+          className="btn"
           style={{
             background: 'none',
             border: 'none',
@@ -46,11 +47,10 @@ export default function BottomNav({ active, onChange }: Props) {
             {item.label}
           </span>
           {active === item.id && (
-            <div style={{
+            <div className="nav-dot" style={{
               width: 4, height: 4,
               borderRadius: '50%',
               background: '#22C55E',
-              boxShadow: '0 0 6px #22C55E',
             }} />
           )}
         </button>

@@ -59,6 +59,7 @@ model Product {
   imageUrl    String?
   inStock     Boolean     @default(true)
   orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
 }
 
 enum Category {
@@ -68,15 +69,16 @@ enum Category {
 }
 
 model Order {
-  id         Int         @id @default(autoincrement())
-  userId     Int
-  user       User        @relation(fields: [userId], references: [id])
-  items      OrderItem[]
-  totalPrice Int
-  discount   Int         @default(0)
-  promoCode  String?
-  status     OrderStatus @default(PENDING)
-  createdAt  DateTime    @default(now())
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  totalPrice      Int
+  discount        Int         @default(0)
+  promoCode       String?
+  bonusPointsUsed Int         @default(0)
+  status          OrderStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
 }
 
 enum OrderStatus {

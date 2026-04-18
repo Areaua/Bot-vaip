@@ -1,29 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import Checkout from './pages/Checkout'
+import Profile from './pages/Profile'
+import Admin from './pages/Admin'
 import WheelGame from './components/WheelGame'
 import BottomNav from './components/BottomNav'
 
-const PRODUCTS = [
-  { id: 1, name: 'LOST MARY 4000',   price: 380, emoji: '💨' },
-  { id: 2, name: 'Elf Bar 1500',     price: 280, emoji: '⚡' },
-  { id: 3, name: 'Chaser Salt 30мл', price: 180, emoji: '🧪' },
-  { id: 4, name: 'Fruit Mix 60мл',   price: 220, emoji: '🍓' },
-  { id: 5, name: 'Coil для Pod',     price: 120, emoji: '🔧' },
-  { id: 6, name: 'Кабель USB-C',     price: 80,  emoji: '🔌' },
-]
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-function App() {
+const CAT_EMOJI: Record<string, string> = { LIQUID: '🧪', DISPOSABLE: '💨', ACCESSORY: '🔧' }
+
+function getTelegramId(): string {
+  const tg = (window as any).Telegram?.WebApp
+  const userId = tg?.initDataUnsafe?.user?.id
+  return userId ? String(userId) : '123456789'
+}
+
+function MainApp() {
   const [page, setPage] = useState('home')
   const [cart, setCart] = useState<{ [key: number]: number }>({})
   const [initCategory, setInitCategory] = useState('Всі')
+  const [telegramId] = useState<string>(getTelegramId)
+  const [products, setProducts] = useState<any[]>([])
+  const [bonusBalance, setBonusBalance] = useState(0)
+
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp
+    if (tg) tg.expand()
+
+    axios.post(`${API_URL}/users/register`, {
+      telegramId,
+      username: tg?.initDataUnsafe?.user?.username,
+      firstName: tg?.initDataUnsafe?.user?.first_name,
+    }).then(r => {
+      if (r.data?.bonusBalance !== undefined) setBonusBalance(r.data.bonusBalance)
+    }).catch(() => {})
+
+    axios.post(`${API_URL}/users/daily-bonus`, { telegramId })
+      .then(r => { if (r.data?.bonusBalance !== undefined) setBonusBalance(r.data.bonusBalance) })
+      .catch(() => {})
+
+    axios.get(`${API_URL}/products`).then(r => setProducts(r.data)).catch(() => {})
+  }, [telegramId])
 
   const cartCount = Object.values(cart).reduce((a, b) => a + b, 0)
-  const cartTotal = PRODUCTS.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0)
-  const cartItems = PRODUCTS
+  const cartTotal = products.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0)
+  const cartItems = products
     .filter(p => cart[p.id] > 0)
-    .map(p => ({ ...p, qty: cart[p.id] }))
+    .map(p => ({ ...p, qty: cart[p.id], emoji: CAT_EMOJI[p.category] ?? '📦' }))
 
   const handleNavigate = (target: string) => {
     if (target.startsWith('shop:')) {
@@ -34,7 +60,13 @@ function App() {
     }
   }
 
-  const handleOrder = () => {
+  const handleOrder = (bonusPoints: number) => {
+    const items = cartItems.map(i => ({ productId: i.id, quantity: i.qty }))
+    axios.post(`${API_URL}/orders`, { telegramId, items, bonusPoints })
+      .then(() => {
+        setBonusBalance(b => Math.max(0, b - bonusPoints))
+      })
+      .catch(() => {})
     setCart({})
     setPage('home')
     alert('Замовлення оформлено! Менеджер звяжеться з вами.')
@@ -43,14 +75,19 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D' }}>
       {page === 'home'     && <Home onNavigate={handleNavigate} cartCount={cartCount} />}
-      {page === 'wheel'    && <WheelGame />}
-      {page === 'shop'     && <Shop onNavigate={handleNavigate} cart={cart} setCart={setCart} initCategory={initCategory} />}
-      {page === 'checkout' && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} />}
-      {page === 'cart'     && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('home')} onOrder={handleOrder} />}
-      {page === 'profile'  && <div style={{ padding: 20, color: '#fff' }}>Profile — coming soon</div>}
+      {page === 'wheel'    && <WheelGame telegramId={telegramId} />}
+      {page === 'shop'     && <Shop onNavigate={handleNavigate} cart={cart} setCart={setCart} initCategory={initCategory} telegramId={telegramId} products={products} />}
+      {page === 'checkout' && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} />}
+      {page === 'cart'     && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} />}
+      {page === 'profile'  && <Profile telegramId={telegramId} onNavigate={handleNavigate} />}
       <BottomNav active={page} onChange={handleNavigate} />
     </div>
   )
+}
+
+function App() {
+  const isAdmin = new URLSearchParams(window.location.search).has('admin')
+  return isAdmin ? <Admin /> : <MainApp />
 }
 
 export default App

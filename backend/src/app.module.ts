@@ -4,6 +4,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { SpinModule } from './spin/spin.module';
 import { RedisModule } from './redis/redis.module';
+import { ProductsModule } from './products/products.module';
+import { OrdersModule } from './orders/orders.module';
+import { PromoModule } from './promo/promo.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -12,6 +16,10 @@ import { RedisModule } from './redis/redis.module';
     RedisModule,
     UsersModule,
     SpinModule,
+    ProductsModule,
+    OrdersModule,
+    PromoModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

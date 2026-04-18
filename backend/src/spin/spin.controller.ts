@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query } from '@nestjs/common';
 import { SpinService } from './spin.service';
 
 @Controller('spin')
@@ -11,7 +11,7 @@ export class SpinController {
   }
 
   @Get('status')
-  async status(@Body() body: { telegramId: string }) {
-    return this.spinService.getStatus(BigInt(body.telegramId));
+  async status(@Query('telegramId') telegramId: string) {
+    return this.spinService.getStatus(BigInt(telegramId));
   }
 }
