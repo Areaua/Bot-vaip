@@ -30,10 +30,14 @@ function MainApp() {
     const tg = (window as any).Telegram?.WebApp
     if (tg) tg.expand()
 
+    const startParam: string | undefined = tg?.initDataUnsafe?.start_param
+    const referralCode = startParam?.startsWith('ref_') ? startParam.slice(4) : undefined
+
     axios.post(`${API_URL}/users/register`, {
       telegramId,
       username: tg?.initDataUnsafe?.user?.username,
       firstName: tg?.initDataUnsafe?.user?.first_name,
+      referralCode,
     }).then(r => {
       if (r.data?.bonusBalance !== undefined) setBonusBalance(r.data.bonusBalance)
     }).catch(() => {})
@@ -60,9 +64,9 @@ function MainApp() {
     }
   }
 
-  const handleOrder = (bonusPoints: number) => {
+  const handleOrder = (bonusPoints: number, delivery: { customerName: string; phone: string; deliveryMethod: string; deliveryAddress: string; comment: string }) => {
     const items = cartItems.map(i => ({ productId: i.id, quantity: i.qty }))
-    axios.post(`${API_URL}/orders`, { telegramId, items, bonusPoints })
+    axios.post(`${API_URL}/orders`, { telegramId, items, bonusPoints, delivery })
       .then(() => {
         setBonusBalance(b => Math.max(0, b - bonusPoints))
       })

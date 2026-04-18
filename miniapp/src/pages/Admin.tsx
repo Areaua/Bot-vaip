@@ -6,7 +6,7 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const CATEGORIES = ['LIQUID', 'DISPOSABLE', 'ACCESSORY']
 const CAT_LABEL: Record<string, string> = { LIQUID: 'Рідини', DISPOSABLE: 'Одноразки', ACCESSORY: 'Аксесуари' }
 
-type Tab = 'stats' | 'products' | 'wheel' | 'users' | 'grant'
+type Tab = 'stats' | 'products' | 'wheel' | 'users' | 'orders' | 'grant'
 
 function api(key: string) {
   return axios.create({ baseURL: API, headers: { 'x-admin-key': key } })
@@ -205,6 +205,140 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
           <button onClick={() => del(p.id)} style={{ ...btnRed, fontSize: 11, padding: '5px 10px' }}>🗑</button>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: '⏳ Нове',
+  CONFIRMED: '✅ Підтверджено',
+  SHIPPED: '🚚 Відправлено',
+  DELIVERED: '📦 Доставлено',
+  CANCELLED: '❌ Скасовано',
+}
+const STATUS_COLOR: Record<string, string> = {
+  PENDING: '#f59e0b',
+  CONFIRMED: '#22C55E',
+  SHIPPED: '#3B82F6',
+  DELIVERED: '#86efac',
+  CANCELLED: '#ef4444',
+}
+
+function OrdersTab({ adminKey }: { adminKey: string }) {
+  const [data, setData] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [updatingId, setUpdatingId] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState<number | null>(null)
+
+  const load = useCallback(() => {
+    const params = new URLSearchParams({ page: String(page) })
+    if (filterStatus) params.set('status', filterStatus)
+    api(adminKey).get(`/admin/orders?${params}`).then(r => setData(r.data)).catch(() => {})
+  }, [adminKey, page, filterStatus])
+
+  useEffect(() => { load() }, [load])
+
+  const changeStatus = async (orderId: number, status: string) => {
+    setUpdatingId(orderId)
+    try {
+      await api(adminKey).put(`/admin/orders/${orderId}/status`, { status })
+      load()
+    } finally { setUpdatingId(null) }
+  }
+
+  if (!data) return <Loader />
+
+  return (
+    <div>
+      {/* Фільтр по статусу */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
+        {['', ...ORDER_STATUSES].map(s => (
+          <button key={s} onClick={() => { setFilterStatus(s); setPage(1) }} style={{ ...( filterStatus === s ? btnGreen : btnGray), whiteSpace: 'nowrap', padding: '6px 12px', fontSize: 12 }}>
+            {s ? STATUS_LABEL[s] : '📋 Всі'}
+          </button>
+        ))}
+      </div>
+
+      <p style={{ color: '#555', fontSize: 12, marginBottom: 10 }}>Всього: {data.total} замовлень</p>
+
+      {data.orders.map((order: any) => (
+        <div key={order.id} style={{ background: '#111', borderRadius: 14, border: '1px solid #1f1f1f', marginBottom: 10, overflow: 'hidden' }}>
+
+          {/* Шапка замовлення */}
+          <div onClick={() => setExpanded(expanded === order.id ? null : order.id)} style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ color: '#555', fontSize: 11 }}>#{order.id}</span>
+                <span style={{ background: STATUS_COLOR[order.status] + '22', color: STATUS_COLOR[order.status], fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 50 }}>
+                  {STATUS_LABEL[order.status]}
+                </span>
+              </div>
+              <p style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>
+                {order.user.firstName ?? order.user.username ?? `ID ${order.user.telegramId}`}
+              </p>
+              <p style={{ color: '#555', fontSize: 11, marginTop: 2 }}>
+                {new Date(order.createdAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ color: '#22C55E', fontWeight: 700, fontSize: 16 }}>{order.totalPrice} ₴</p>
+              {order.bonusPointsUsed > 0 && <p style={{ color: '#86efac', fontSize: 11 }}>-{order.bonusPointsUsed} балів</p>}
+            </div>
+            <span style={{ color: '#444', fontSize: 16 }}>{expanded === order.id ? '▲' : '▼'}</span>
+          </div>
+
+          {/* Деталі */}
+          {expanded === order.id && (
+            <div style={{ borderTop: '1px solid #1a1a1a', padding: '12px 14px' }}>
+              {/* Товари */}
+              <div style={{ marginBottom: 12 }}>
+                {order.items.map((item: any, i: number) => (
+                  <p key={i} style={{ color: '#ccc', fontSize: 13, lineHeight: 1.8 }}>
+                    {item.product.name} × {item.quantity} — <span style={{ color: '#22C55E' }}>{item.quantity * item.price} ₴</span>
+                  </p>
+                ))}
+                {order.promoCode && <p style={{ color: '#86efac', fontSize: 12, marginTop: 4 }}>Промокод: {order.promoCode} (-{order.discount}%)</p>}
+                {order.bonusPointsUsed > 0 && <p style={{ color: '#86efac', fontSize: 12 }}>Бонуси: -{order.bonusPointsUsed} балів</p>}
+              </div>
+
+              {/* Доставка */}
+              {order.customerName && (
+                <div style={{ background: '#0a0a0a', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
+                  <p style={{ color: '#555', fontSize: 11, marginBottom: 6 }}>ДАНІ ДОСТАВКИ</p>
+                  <p style={{ color: '#fff', fontSize: 13 }}>👤 {order.customerName}</p>
+                  <p style={{ color: '#ccc', fontSize: 13 }}>📞 {order.phone}</p>
+                  <p style={{ color: '#ccc', fontSize: 13 }}>🚚 {order.deliveryMethod?.replace('NOVA_POSHTA','Нова Пошта').replace('UKRPOSHTA','Укрпошта').replace('COURIER','Кур\'єр').replace('PICKUP','Самовивіз')}</p>
+                  {order.deliveryAddress && <p style={{ color: '#ccc', fontSize: 13 }}>📍 {order.deliveryAddress}</p>}
+                  {order.comment && <p style={{ color: '#888', fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>💬 {order.comment}</p>}
+                </div>
+              )}
+
+              {/* Зміна статусу */}
+              <p style={{ color: '#555', fontSize: 12, marginBottom: 6 }}>Змінити статус:</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {ORDER_STATUSES.filter(s => s !== order.status).map(s => (
+                  <button
+                    key={s}
+                    disabled={updatingId === order.id}
+                    onClick={() => changeStatus(order.id, s)}
+                    style={{ background: STATUS_COLOR[s] + '22', color: STATUS_COLOR[s], border: `1px solid ${STATUS_COLOR[s]}44`, borderRadius: 8, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    {STATUS_LABEL[s]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={btnGray}>← Назад</button>
+        <span style={{ color: '#555', fontSize: 13, alignSelf: 'center' }}>Стор. {page}</span>
+        <button onClick={() => setPage(p => p + 1)} disabled={data.orders.length < 20} style={btnGray}>Далі →</button>
+      </div>
     </div>
   )
 }
@@ -434,6 +568,7 @@ export default function Admin() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'stats',    label: '📊 Стат' },
     { id: 'products', label: '🛍 Товари' },
+    { id: 'orders',   label: '📦 Замовл.' },
     { id: 'wheel',    label: '🎡 Колесо' },
     { id: 'users',    label: '👥 Юзери' },
     { id: 'grant',    label: '🎁 Видати' },
@@ -464,6 +599,7 @@ export default function Admin() {
       {/* Content */}
       {tab === 'stats'    && <StatsTab    adminKey={adminKey} />}
       {tab === 'products' && <ProductsTab adminKey={adminKey} />}
+      {tab === 'orders'   && <OrdersTab   adminKey={adminKey} />}
       {tab === 'wheel'    && <WheelTab    adminKey={adminKey} />}
       {tab === 'users'    && <UsersTab    adminKey={adminKey} />}
       {tab === 'grant'    && <GrantTab    adminKey={adminKey} />}

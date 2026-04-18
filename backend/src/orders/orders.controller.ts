@@ -1,6 +1,14 @@
 import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 
+interface DeliveryInfo {
+  customerName: string;
+  phone: string;
+  deliveryMethod: string;
+  deliveryAddress: string;
+  comment?: string;
+}
+
 @Controller('orders')
 export class OrdersController {
   constructor(private ordersService: OrdersService) {}
@@ -13,9 +21,16 @@ export class OrdersController {
       items: { productId: number; quantity: number }[];
       promoCode?: string;
       bonusPoints?: number;
+      delivery: DeliveryInfo;
     },
   ) {
-    return this.ordersService.create(BigInt(body.telegramId), body.items, body.promoCode, body.bonusPoints);
+    return this.ordersService.create(
+      BigInt(body.telegramId),
+      body.items,
+      body.promoCode,
+      body.bonusPoints,
+      body.delivery,
+    );
   }
 
   @Get('user/:telegramId')

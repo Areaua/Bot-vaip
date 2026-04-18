@@ -1,10 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BotService } from '../bot/bot.service';
 import { randomBytes } from 'crypto';
+
+const STATUS_MSG: Record<string, string> = {
+  CONFIRMED:  '✅ Ваше замовлення підтверджено\\! Готуємо до відправки\\.',
+  SHIPPED:    '🚚 Ваше замовлення відправлено\\! Очікуйте доставку\\.',
+  DELIVERED:  '📦 Ваше замовлення доставлено\\! Дякуємо за покупку\\! ⚡',
+  CANCELLED:  '❌ На жаль, ваше замовлення скасовано\\. Зверніться до підтримки\\.',
+};
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private bot: BotService,
+  ) {}
 
   async getStats() {
     const [totalUsers, totalSpins, jackpotWins, totalOrders] = await Promise.all([
@@ -61,6 +72,50 @@ export class AdminService {
 
   async updatePrize(id: number, data: Partial<{ label: string; probability: number; value: number; isActive: boolean }>) {
     return this.prisma.wheelPrize.update({ where: { id }, data });
+  }
+
+  async getOrders(page = 1, status?: string) {
+    const limit = 20;
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { telegramId: true, firstName: true, username: true } },
+          items: { include: { product: { select: { name: true } } } },
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+    return { orders, total, page };
+  }
+
+  async updateOrderStatus(id: number, status: string) {
+    const order = await this.prisma.order.update({
+      where: { id },
+      data: { status: status as any },
+      include: {
+        user: { select: { telegramId: true, firstName: true, username: true } },
+        items: { include: { product: { select: { name: true } } } },
+      },
+    });
+
+    const msg = STATUS_MSG[status];
+    if (msg) {
+      const name = order.user.firstName ?? order.user.username ?? 'Клієнт';
+      await this.bot.sendMessage(
+        order.user.telegramId,
+        `⚡ *VOLT VAPE* — Замовлення \\#${id}\n\nПривіт, ${name}\\!\n${msg}`,
+      );
+    }
+
+    return order;
   }
 
   async grantPromo(telegramId: bigint, discount: number) {

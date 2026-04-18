@@ -77,6 +77,11 @@ model Order {
   discount        Int         @default(0)
   promoCode       String?
   bonusPointsUsed Int         @default(0)
+  customerName    String?
+  phone           String?
+  deliveryMethod  String?
+  deliveryAddress String?
+  comment         String?
   status          OrderStatus @default(PENDING)
   createdAt       DateTime    @default(now())
 }

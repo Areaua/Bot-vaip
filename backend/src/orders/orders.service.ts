@@ -14,7 +14,13 @@ export class OrdersService {
     private redis: RedisService,
   ) {}
 
-  async create(telegramId: bigint, items: OrderItem[], promoCode?: string, bonusPointsToSpend = 0) {
+  async create(
+    telegramId: bigint,
+    items: OrderItem[],
+    promoCode?: string,
+    bonusPointsToSpend = 0,
+    delivery?: { customerName: string; phone: string; deliveryMethod: string; deliveryAddress: string; comment?: string },
+  ) {
     const user = await this.prisma.user.findUnique({ where: { telegramId } });
     if (!user) throw new BadRequestException('Користувач не знайдений');
 
@@ -66,6 +72,11 @@ export class OrdersService {
         discount,
         promoCode,
         bonusPointsUsed,
+        customerName: delivery?.customerName,
+        phone: delivery?.phone,
+        deliveryMethod: delivery?.deliveryMethod,
+        deliveryAddress: delivery?.deliveryAddress,
+        comment: delivery?.comment,
         items: { create: orderItems },
       },
       include: { items: { include: { product: true } } },

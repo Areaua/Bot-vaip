@@ -23,11 +23,30 @@ interface OrderItem {
   product: { name: string }
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  PENDING:   '⏳ Нове',
+  CONFIRMED: '✅ Підтверджено',
+  SHIPPED:   '🚚 Відправлено',
+  DELIVERED: '📦 Доставлено',
+  CANCELLED: '❌ Скасовано',
+}
+const STATUS_COLOR: Record<string, string> = {
+  PENDING:   '#f59e0b',
+  CONFIRMED: '#22C55E',
+  SHIPPED:   '#3B82F6',
+  DELIVERED: '#86efac',
+  CANCELLED: '#ef4444',
+}
+
 interface Order {
   id: number
   totalPrice: number
   discount: number
   promoCode?: string
+  bonusPointsUsed?: number
+  status: string
+  deliveryMethod?: string
+  deliveryAddress?: string
   createdAt: string
   items: OrderItem[]
 }
@@ -171,21 +190,28 @@ export default function Profile({ telegramId, onNavigate }: Props) {
         <div style={{ background: '#111', borderRadius: 16, border: '1px solid #1f1f1f', padding: '16px', marginBottom: 12 }}>
           <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>📦 Мої замовлення</p>
           {profile.orders.map(order => (
-            <div key={order.id} style={{ background: '#1a1a1a', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: '1px solid #2a2a2a' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <p style={{ color: '#888', fontSize: 11 }}>
-                  {new Date(order.createdAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                </p>
-                <span style={{ color: '#22C55E', fontWeight: 700, fontSize: 14 }}>{order.totalPrice} ₴</span>
+            <div key={order.id} style={{ background: '#1a1a1a', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1px solid ${STATUS_COLOR[order.status] ?? '#2a2a2a'}22` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div>
+                  <span style={{ background: (STATUS_COLOR[order.status] ?? '#555') + '22', color: STATUS_COLOR[order.status] ?? '#555', fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 50 }}>
+                    {STATUS_LABEL[order.status] ?? order.status}
+                  </span>
+                  <p style={{ color: '#555', fontSize: 11, marginTop: 4 }}>
+                    {new Date(order.createdAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <span style={{ color: '#22C55E', fontWeight: 700, fontSize: 15 }}>{order.totalPrice} ₴</span>
               </div>
               {order.items.map((item, i) => (
-                <p key={i} style={{ color: '#fff', fontSize: 12, lineHeight: 1.6 }}>
+                <p key={i} style={{ color: '#ccc', fontSize: 12, lineHeight: 1.7 }}>
                   {item.product.name} × {item.quantity}
                 </p>
               ))}
-              {order.discount > 0 && (
-                <p style={{ color: '#86efac', fontSize: 11, marginTop: 4 }}>Знижка {order.discount}%</p>
-              )}
+              <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+                {order.discount > 0 && <span style={{ color: '#86efac', fontSize: 11 }}>Знижка {order.discount}%</span>}
+                {(order.bonusPointsUsed ?? 0) > 0 && <span style={{ color: '#86efac', fontSize: 11 }}>⭐ -{order.bonusPointsUsed} балів</span>}
+                {order.deliveryMethod && <span style={{ color: '#555', fontSize: 11 }}>🚚 {order.deliveryMethod.replace('NOVA_POSHTA','Нова Пошта').replace('UKRPOSHTA','Укрпошта').replace('COURIER','Кур\'єр').replace('PICKUP','Самовивіз')}</span>}
+              </div>
             </div>
           ))}
         </div>

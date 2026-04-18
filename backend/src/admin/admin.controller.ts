@@ -85,6 +85,26 @@ export class AdminController {
     return { url: `/uploads/${file.filename}` };
   }
 
+  @Get('orders')
+  orders(
+    @Headers('x-admin-key') key: string,
+    @Query('page') page = '1',
+    @Query('status') status?: string,
+  ) {
+    this.auth(key);
+    return this.adminService.getOrders(parseInt(page), status);
+  }
+
+  @Put('orders/:id/status')
+  updateOrderStatus(
+    @Headers('x-admin-key') key: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: string },
+  ) {
+    this.auth(key);
+    return this.adminService.updateOrderStatus(id, body.status);
+  }
+
   @Get('prizes')
   prizes(@Headers('x-admin-key') key: string) {
     this.auth(key);
