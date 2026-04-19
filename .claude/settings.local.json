@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm i *)",
       "Bash(npx tsc *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
