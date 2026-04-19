@@ -147,7 +147,7 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
     setEditing(p)
     setForm({ name: p.name, category: p.category, price: String(p.price), description: p.description ?? '', imageUrl: p.imageUrl ?? '' })
     setImageFile(null)
-    setImagePreview(p.imageUrl ? `${API}${p.imageUrl}` : '')
+    setImagePreview(p.imageUrl ? (p.imageUrl.startsWith('data:') ? p.imageUrl : `${API}${p.imageUrl}`) : '')
   }
 
   const toggleStock = async (p: any) => {
@@ -195,7 +195,7 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
       {/* Список */}
       {products.map(p => (
         <div key={p.id} style={{ background: '#111', borderRadius: 12, border: '1px solid #1f1f1f', padding: '12px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-          {p.imageUrl && <img src={`${API}${p.imageUrl}`} alt={p.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+          {p.imageUrl && <img src={p.imageUrl.startsWith('data:') ? p.imageUrl : `${API}${p.imageUrl}`} alt={p.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
           <div style={{ flex: 1 }}>
             <p style={{ color: p.inStock ? '#fff' : '#555', fontWeight: 600, fontSize: 14 }}>{p.name}</p>
             <p style={{ color: '#555', fontSize: 11, marginTop: 2 }}>{CAT_LABEL[p.category]} · {p.price} ₴ · {p.inStock ? '✅ В наявності' : '❌ Немає'}</p>

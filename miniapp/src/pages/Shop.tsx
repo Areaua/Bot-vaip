@@ -35,7 +35,8 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
   })
 
   const cartCount = Object.values(cart).reduce((a, b) => a + b, 0)
-  const cartTotal = products.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0)
+  const cartRaw   = products.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0)
+  const cartTotal = discount > 0 ? Math.round(cartRaw * (1 - discount / 100)) : cartRaw
 
   const checkPromo = async () => {
     try {

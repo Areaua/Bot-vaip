@@ -25,7 +25,9 @@ interface Props {
 }
 
 function ProductCard({ product, onClick }: { product: Product; onClick: () => void }) {
-  const imgSrc = product.imageUrl ? `${API_URL}${product.imageUrl}` : null
+  const imgSrc = product.imageUrl
+    ? (product.imageUrl.startsWith('data:') ? product.imageUrl : `${API_URL}${product.imageUrl}`)
+    : null
   return (
     <div onClick={onClick} className="btn" style={{ minWidth: 130, background: '#111', borderRadius: 14, border: '1px solid #1f1f1f', overflow: 'hidden', cursor: 'pointer' }}>
       <div style={{ background: 'linear-gradient(135deg, #0a2a0a, #111d11)', height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, position: 'relative', overflow: 'hidden' }}>
