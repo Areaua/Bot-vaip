@@ -173,4 +173,23 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`Failed to send message to ${chatId}: ${e.message}`);
     }
   }
+
+  async sendSupportToAdmin(userTgId: bigint, name: string, tag: string, text: string) {
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+    if (!adminChatId || !/^\d+$/.test(adminChatId)) return;
+    try {
+      const sent = await this.bot.api.sendMessage(
+        Number(adminChatId),
+        `💬 <b>Звернення в підтримку</b>\n👤 ${name}${tag} [<code>${userTgId}</code>]\n\n${text}\n\n<i>Відповідайте reply на це повідомлення</i>`,
+        { parse_mode: 'HTML' },
+      );
+      this.supportMap.set(sent.message_id, userTgId);
+      if (this.supportMap.size > 500) {
+        const first = this.supportMap.keys().next().value;
+        this.supportMap.delete(first);
+      }
+    } catch (e: any) {
+      this.logger.warn(`sendSupportToAdmin error: ${e.message}`);
+    }
+  }
 }

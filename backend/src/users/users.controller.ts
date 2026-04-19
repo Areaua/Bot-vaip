@@ -1,12 +1,14 @@
 import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RedisService } from '../redis/redis.service';
+import { BotService } from '../bot/bot.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private usersService: UsersService,
     private redis: RedisService,
+    private bot: BotService,
   ) {}
 
   @Post('register')
@@ -42,25 +44,9 @@ export class UsersController {
   @Post('support')
   async support(@Body() body: { telegramId: string; text: string }) {
     const user = await this.usersService.getProfile(BigInt(body.telegramId))
-    const adminChatId = process.env.ADMIN_CHAT_ID
-    if (adminChatId && /^\d+$/.test(adminChatId)) {
-      const name = user?.firstName ?? user?.username ?? body.telegramId
-      const tag  = user?.username ? ` (@${user.username})` : ''
-      await this.redis.set(`support_user:${body.telegramId}`, body.telegramId, 86400 * 7)
-      // forward via bot API directly
-      const BOT_TOKEN = process.env.BOT_TOKEN
-      if (BOT_TOKEN) {
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: adminChatId,
-            text: `💬 <b>Звернення в підтримку</b>\n👤 ${name}${tag} [<code>${body.telegramId}</code>]\n\n${body.text}\n\n<i>Відповідайте через бот: /reply ${body.telegramId} ваш_текст</i>`,
-            parse_mode: 'HTML',
-          }),
-        })
-      }
-    }
+    const name = user?.firstName ?? user?.username ?? body.telegramId
+    const tag  = user?.username ? ` (@${user.username})` : ''
+    await this.bot.sendSupportToAdmin(BigInt(body.telegramId), name, tag, body.text)
     return { ok: true }
   }
 
