@@ -70,12 +70,13 @@ function MainApp() {
       }).catch(() => {})
   }, [telegramId, fetchBalance])
 
-  // Оновлюємо баланс коли виходимо з колеса або профілю
+  // Оновлюємо баланс і продукти при переході в магазин/головну
   useEffect(() => {
     if (page === 'shop' || page === 'home') {
       axios.get(`${API_URL}/users/balance`, { params: { telegramId } })
         .then(r => { if (r.data?.bonusBalance !== undefined) setBonusBalance(r.data.bonusBalance) })
         .catch(() => {})
+      axios.get(`${API_URL}/products`).then(r => setProducts(r.data)).catch(() => {})
     }
   }, [page, telegramId])
 
