@@ -20,10 +20,14 @@ function getTelegramId(): string {
 
 function MainApp() {
   const [page, setPage] = useState('home')
-  const [cart, setCart] = useState<{ [key: number]: number }>({})
+  const [cart, setCart] = useState<{ [key: number]: number }>(() => {
+    try { return JSON.parse(localStorage.getItem('volt_cart') || '{}') } catch { return {} }
+  })
   const [initCategory, setInitCategory] = useState('Всі')
   const [telegramId] = useState<string>(getTelegramId)
   const [products, setProducts] = useState<any[]>([])
+
+  useEffect(() => { localStorage.setItem('volt_cart', JSON.stringify(cart)) }, [cart])
   const [bonusBalance, setBonusBalance] = useState(0)
 
   useEffect(() => {
@@ -72,6 +76,7 @@ function MainApp() {
       })
       .catch(() => {})
     setCart({})
+    localStorage.removeItem('volt_cart')
     setPage('home')
     alert('Замовлення оформлено! Менеджер звяжеться з вами.')
   }

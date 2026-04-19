@@ -39,6 +39,8 @@ export default function WheelGame({ telegramId }: Props) {
   const rotRef     = useRef(0)
   const [spinning, setSpinning] = useState(false)
   const [prize,    setPrize]    = useState<any>(null)
+  const [promoCode, setPromoCode] = useState<string | null>(null)
+  const [copied,   setCopied]   = useState(false)
   const [canSpin,  setCanSpin]  = useState<boolean | null>(null)
   const [collecting, setCollecting] = useState(false)
 
@@ -126,7 +128,7 @@ export default function WheelGame({ telegramId }: Props) {
         rotRef.current = cur + total * e
         draw(rotRef.current)
         if (p < 1) requestAnimationFrame(animate)
-        else { setSpinning(false); setCanSpin(false); setPrize(result.prize) }
+        else { setSpinning(false); setCanSpin(false); setPrize(result.prize); setPromoCode(result.promoCode ?? null) }
       }
       requestAnimationFrame(animate)
     } catch (err: any) {
@@ -161,7 +163,7 @@ export default function WheelGame({ telegramId }: Props) {
 
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '13px solid transparent', borderRight: '13px solid transparent', borderTop: '26px solid #39FF14', filter: 'drop-shadow(0 0 6px #39FF14)', zIndex: 10 }} />
-        <canvas ref={canvasRef} width={300} height={300} style={{ borderRadius: '50%', display: 'block' }} />
+        <canvas ref={canvasRef} width={300} height={300} style={{ borderRadius: '50%', display: 'block', willChange: 'transform', transform: 'translateZ(0)' }} />
       </div>
 
       <button
@@ -209,12 +211,28 @@ export default function WheelGame({ telegramId }: Props) {
             <p style={{ color: '#888', marginTop: 6, fontSize: 15 }}>{prize.label}</p>
           </div>
 
+          {/* Промокод — показуємо код та кнопку копіювати */}
+          {promoCode && (
+            <div style={{ width: '100%', maxWidth: 320, background: '#0a2a0a', borderRadius: 14, border: '1px solid #22C55E', padding: '14px 16px' }}>
+              <p style={{ color: '#86efac', fontSize: 12, marginBottom: 8 }}>🎟 Твій промокод — застосуй у магазині:</p>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ color: '#39FF14', fontWeight: 800, fontSize: 20, flex: 1, letterSpacing: 2 }}>{promoCode}</span>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(promoCode); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+                  style={{ background: copied ? '#166534' : '#22C55E', color: '#000', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  {copied ? '✓ Скопійовано' : 'Копіювати'}
+                </button>
+              </div>
+              <p style={{ color: '#555', fontSize: 11, marginTop: 8 }}>Промокод також збережено у профілі</p>
+            </div>
+          )}
+
           <button
             className="btn spin-btn-ready"
             onClick={handleCollect}
             disabled={collecting}
             style={{ background: '#22C55E', color: '#000', fontWeight: 700, fontSize: 17, padding: '15px 0', borderRadius: 50, border: 'none', cursor: 'pointer', width: '100%', maxWidth: 320, opacity: collecting ? 0.7 : 1 }}>
-            {collecting ? '✓ Отримано!' : prize.type === 'BONUS_POINTS' ? `Отримати +${prize.value} балів` : 'До магазину'}
+            {collecting ? '✓ Отримано!' : prize.type === 'BONUS_POINTS' ? `Отримати +${prize.value} балів` : promoCode ? 'До магазину →' : 'Отримати приз'}
           </button>
 
           <button className="btn" onClick={() => setPrize(null)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 14 }}>

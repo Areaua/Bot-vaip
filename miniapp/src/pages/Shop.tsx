@@ -118,7 +118,10 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
               <p style={{ color: '#fff', fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{product.name}</p>
               <p style={{ color: '#555', fontSize: 11, marginBottom: 10 }}>{CAT_LABEL[product.category] ?? product.category}</p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ color: '#22C55E', fontWeight: 700, fontSize: 15 }}>{product.price} ₴</span>
+                <div>
+                  {discount > 0 && <span style={{ color: '#555', fontSize: 11, textDecoration: 'line-through', display: 'block' }}>{product.price} ₴</span>}
+                  <span style={{ color: '#22C55E', fontWeight: 700, fontSize: 15 }}>{discount > 0 ? Math.round(product.price * (1 - discount / 100)) : product.price} ₴</span>
+                </div>
                 {cart[product.id] > 0 ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <button onClick={() => removeFromCart(product.id)} className="btn" style={{ background: '#1f1f1f', border: 'none', borderRadius: 8, width: 26, height: 26, fontSize: 16, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>

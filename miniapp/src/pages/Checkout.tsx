@@ -58,6 +58,7 @@ export default function Checkout({ items, total, onBack, onOrder, bonusBalance }
   const validate = () => {
     const e: Partial<DeliveryInfo> = {}
     if (!delivery.customerName.trim()) e.customerName = "Введіть ім'я"
+    else if (!/^[a-zA-Zа-яА-ЯіІїЇєЄёЁ'\-\s]+$/.test(delivery.customerName.trim())) e.customerName = 'Тільки літери'
     if (!/^\+?[\d\s\-]{10,13}$/.test(delivery.phone.trim())) e.phone = 'Невірний номер'
     if (delivery.deliveryMethod !== 'PICKUP' && !delivery.deliveryAddress.trim())
       e.deliveryAddress = 'Введіть адресу'
