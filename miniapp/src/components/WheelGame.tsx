@@ -49,7 +49,16 @@ export default function WheelGame({ telegramId }: Props) {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
-    const sz = canvas.width, cx = sz / 2, cy = sz / 2
+    const dpr = window.devicePixelRatio || 1
+    const logical = 300
+    if (canvas.width !== logical * dpr) {
+      canvas.width  = logical * dpr
+      canvas.height = logical * dpr
+      canvas.style.width  = `${logical}px`
+      canvas.style.height = `${logical}px`
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    const sz = logical, cx = sz / 2, cy = sz / 2
     const r  = cx - 8
     const seg = (2 * Math.PI) / PRIZES.length
 
@@ -163,7 +172,7 @@ export default function WheelGame({ telegramId }: Props) {
 
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '13px solid transparent', borderRight: '13px solid transparent', borderTop: '26px solid #39FF14', filter: 'drop-shadow(0 0 6px #39FF14)', zIndex: 10 }} />
-        <canvas ref={canvasRef} width={300} height={300} style={{ borderRadius: '50%', display: 'block', willChange: 'transform', transform: 'translateZ(0)' }} />
+        <canvas ref={canvasRef} style={{ borderRadius: '50%', display: 'block', width: 300, height: 300 }} />
       </div>
 
       <button

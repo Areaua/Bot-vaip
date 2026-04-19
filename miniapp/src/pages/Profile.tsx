@@ -69,7 +69,7 @@ interface Props {
   onNavigate: (page: string) => void
 }
 
-const BOT_USERNAME = 'VoltVapeBot'
+const BOT_USERNAME = 'vo1tvape_bot'
 
 export default function Profile({ telegramId, onNavigate }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
