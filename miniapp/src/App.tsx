@@ -99,8 +99,8 @@ function MainApp() {
       {page === 'home'     && <Home onNavigate={handleNavigate} cartCount={cartCount} />}
       {page === 'wheel'    && <WheelGame telegramId={telegramId} onDone={() => { fetchBalance(); setPage('home') }} />}
       {page === 'shop'     && <Shop onNavigate={handleNavigate} cart={cart} setCart={setCart} initCategory={initCategory} telegramId={telegramId} products={products} />}
-      {page === 'checkout' && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} />}
-      {page === 'cart'     && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} />}
+      {page === 'checkout' && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} telegramId={telegramId} />}
+      {page === 'cart'     && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} telegramId={telegramId} />}
       {page === 'profile'  && <Profile telegramId={telegramId} onNavigate={handleNavigate} />}
       <BottomNav active={page} onChange={handleNavigate} />
     </div>

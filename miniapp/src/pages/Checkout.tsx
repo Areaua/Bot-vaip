@@ -22,6 +22,7 @@ interface Props {
   onBack: () => void
   onOrder: (bonusPoints: number, delivery: DeliveryInfo) => void
   bonusBalance: number
+  telegramId: string
 }
 
 const DELIVERY_METHODS = [
@@ -37,11 +38,16 @@ const inp: React.CSSProperties = {
   outline: 'none', boxSizing: 'border-box',
 }
 
-export default function Checkout({ items, total, onBack, onOrder, bonusBalance }: Props) {
+const DELIVERY_KEY = (id: string) => `volt_delivery_${id}`
+
+export default function Checkout({ items, total, onBack, onOrder, bonusBalance, telegramId }: Props) {
   const [useBonus, setUseBonus] = useState(false)
-  const [delivery, setDelivery] = useState<DeliveryInfo>({
-    customerName: '', phone: '', deliveryMethod: 'NOVA_POSHTA',
-    deliveryAddress: '', comment: '',
+  const [delivery, setDelivery] = useState<DeliveryInfo>(() => {
+    try {
+      const saved = localStorage.getItem(DELIVERY_KEY(telegramId))
+      if (saved) return { ...JSON.parse(saved), comment: '' }
+    } catch {}
+    return { customerName: '', phone: '', deliveryMethod: 'NOVA_POSHTA', deliveryAddress: '', comment: '' }
   })
   const [errors, setErrors] = useState<Partial<DeliveryInfo>>({})
 
@@ -67,7 +73,11 @@ export default function Checkout({ items, total, onBack, onOrder, bonusBalance }
   }
 
   const submit = () => {
-    if (validate()) onOrder(bonusDiscount, delivery)
+    if (validate()) {
+      const { comment, ...toSave } = delivery
+      localStorage.setItem(DELIVERY_KEY(telegramId), JSON.stringify(toSave))
+      onOrder(bonusDiscount, delivery)
+    }
   }
 
   const addressLabel = delivery.deliveryMethod === 'NOVA_POSHTA' ? 'Місто та номер відділення'
