@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { BotService } from '../bot/bot.service';
 
 interface OrderItem {
   productId: number;
@@ -12,6 +13,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private redis: RedisService,
+    private bot: BotService,
   ) {}
 
   async create(
@@ -81,6 +83,24 @@ export class OrdersService {
       },
       include: { items: { include: { product: true } } },
     });
+
+    // Повідомлення адміну
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+    if (adminChatId && /^\d+$/.test(adminChatId)) {
+      const itemsList = order.items
+        .map((i: any) => `• ${i.product.name} × ${i.quantity} — ${i.quantity * i.price} ₴`)
+        .join('\n');
+      const deliveryLine = delivery
+        ? `\n🚚 ${delivery.deliveryMethod.replace('NOVA_POSHTA','Нова Пошта').replace('UKRPOSHTA','Укрпошта').replace('COURIER','Кур\'єр').replace('PICKUP','Самовивіз')} | ${delivery.deliveryAddress ?? ''}\n📞 ${delivery.phone} — ${delivery.customerName}`
+        : '';
+      const bonusLine = bonusPointsUsed > 0 ? `\n⭐ Бонуси: -${bonusPointsUsed} балів` : '';
+      const commentLine = delivery?.comment ? `\n💬 ${delivery.comment}` : '';
+
+      await this.bot.sendMessage(
+        BigInt(adminChatId),
+        `🛍 <b>Нове замовлення #${order.id}</b>\n\n${itemsList}${bonusLine}\n\n💰 Сума: <b>${finalPrice} ₴</b>${deliveryLine}${commentLine}`,
+      );
+    }
 
     // Нарахувати 1 бал за кожні 10 ₴
     const earnedPoints = Math.floor(finalPrice / 10);

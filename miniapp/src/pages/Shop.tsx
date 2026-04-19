@@ -4,7 +4,7 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const CAT_LABEL: Record<string, string> = { LIQUID: 'Рідини', DISPOSABLE: 'Одноразки', ACCESSORY: 'Аксесуари' }
-const CAT_EMOJI: Record<string, string> = { LIQUID: '🧪', DISPOSABLE: '💨', ACCESSORY: '🔧' }
+const CAT_EMOJI: Record<string, string>  = { LIQUID: '🧪', DISPOSABLE: '💨', ACCESSORY: '🔧' }
 const DISPLAY_CATS = ['Всі', 'Рідини', 'Одноразки', 'Аксесуари']
 const DISPLAY_TO_API: Record<string, string> = { 'Рідини': 'LIQUID', 'Одноразки': 'DISPOSABLE', 'Аксесуари': 'ACCESSORY' }
 
@@ -18,13 +18,14 @@ interface Props {
 }
 
 export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі', telegramId, products }: Props) {
-  const [category, setCategory] = useState(initCategory)
-  const [search, setSearch] = useState('')
-  const [promo, setPromo] = useState('')
+  const [category, setCategory]       = useState(initCategory)
+  const [search, setSearch]           = useState('')
+  const [promo, setPromo]             = useState('')
   const [promoStatus, setPromoStatus] = useState<'idle' | 'ok' | 'error'>('idle')
-  const [discount, setDiscount] = useState(0)
+  const [discount, setDiscount]       = useState(0)
+  const [modal, setModal]             = useState<any>(null)
 
-  const addToCart = (id: number) => setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
+  const addToCart    = (id: number) => setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
   const removeFromCart = (id: number) => setCart(prev => {
     const next = { ...prev }
     if (next[id] > 1) next[id]--
@@ -40,13 +41,11 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
       const r = await axios.post(`${API_URL}/promo/check`, { code: promo, telegramId })
       setDiscount(r.data.discount)
       setPromoStatus('ok')
-    } catch {
-      setPromoStatus('error')
-    }
+    } catch { setPromoStatus('error') }
   }
 
   const filtered = products.filter(p => {
-    const matchCat = category === 'Всі' || p.category === DISPLAY_TO_API[category]
+    const matchCat    = category === 'Всі' || p.category === DISPLAY_TO_API[category]
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase())
     return matchCat && matchSearch && p.inStock !== false
   })
@@ -96,7 +95,11 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {filtered.map(product => (
           <div key={product.id} style={{ background: '#111', borderRadius: 16, border: cart[product.id] ? '1px solid #22C55E' : '1px solid #1f1f1f', overflow: 'hidden', transition: 'border-color 0.2s' }}>
-            <div style={{ background: 'linear-gradient(135deg, #0a2a0a, #111d11)', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+
+            {/* Фото — клік відкриває модалку */}
+            <div
+              onClick={() => setModal(product)}
+              style={{ background: 'linear-gradient(135deg, #0a2a0a, #111d11)', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}>
               {product.imageUrl
                 ? <img src={`${API_URL}${product.imageUrl}`} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : <span style={{ fontSize: 48 }}>{CAT_EMOJI[product.category] ?? '📦'}</span>
@@ -106,7 +109,11 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
                   {cart[product.id]}
                 </div>
               )}
+              <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.5)', borderRadius: 6, padding: '2px 6px', fontSize: 10, color: '#86efac' }}>
+                детальніше
+              </div>
             </div>
+
             <div style={{ padding: '10px 12px' }}>
               <p style={{ color: '#fff', fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{product.name}</p>
               <p style={{ color: '#555', fontSize: 11, marginBottom: 10 }}>{CAT_LABEL[product.category] ?? product.category}</p>
@@ -139,6 +146,76 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
           </button>
         </div>
       )}
+
+      {/* Модалка товару */}
+      {modal && (
+        <div
+          onClick={() => setModal(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#111', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto', animation: 'slideUp 0.25s ease-out' }}>
+
+            {/* Фото */}
+            <div style={{ background: 'linear-gradient(135deg, #0a2a0a, #111d11)', height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', borderRadius: '20px 20px 0 0' }}>
+              {modal.imageUrl
+                ? <img src={`${API_URL}${modal.imageUrl}`} alt={modal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ fontSize: 80 }}>{CAT_EMOJI[modal.category] ?? '📦'}</span>
+              }
+              <button
+                onClick={() => setModal(null)}
+                style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ✕
+              </button>
+            </div>
+
+            {/* Контент */}
+            <div style={{ padding: '20px 20px 32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div style={{ flex: 1, paddingRight: 12 }}>
+                  <p style={{ color: '#fff', fontWeight: 700, fontSize: 20, lineHeight: 1.3 }}>{modal.name}</p>
+                  <p style={{ color: '#555', fontSize: 13, marginTop: 4 }}>{CAT_LABEL[modal.category] ?? modal.category}</p>
+                </div>
+                <p style={{ color: '#22C55E', fontWeight: 800, fontSize: 24, whiteSpace: 'nowrap' }}>{modal.price} ₴</p>
+              </div>
+
+              {modal.description && (
+                <p style={{ color: '#aaa', fontSize: 14, lineHeight: 1.6, marginBottom: 20, marginTop: 12 }}>
+                  {modal.description}
+                </p>
+              )}
+
+              {/* Нарахується балів */}
+              <div style={{ background: '#0a1a0a', borderRadius: 10, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>⭐</span>
+                <span style={{ color: '#86efac', fontSize: 13 }}>
+                  За цей товар нарахується <b style={{ color: '#22C55E' }}>+{Math.floor(modal.price / 10)} балів</b>
+                </span>
+              </div>
+
+              {/* Кнопки */}
+              {cart[modal.id] > 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => removeFromCart(modal.id)} className="btn" style={{ background: '#1f1f1f', border: 'none', borderRadius: 12, width: 48, height: 48, fontSize: 22, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <span style={{ color: '#fff', fontWeight: 700, fontSize: 20, flex: 1, textAlign: 'center' }}>{cart[modal.id]} шт</span>
+                  <button onClick={() => addToCart(modal.id)} className="btn" style={{ background: '#22C55E', border: 'none', borderRadius: 12, width: 48, height: 48, fontSize: 22, cursor: 'pointer', color: '#000', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                </div>
+              ) : (
+                <button onClick={() => { addToCart(modal.id); setModal(null) }} className="btn" style={{ background: '#22C55E', color: '#000', border: 'none', borderRadius: 50, padding: '15px 0', fontWeight: 700, fontSize: 16, cursor: 'pointer', width: '100%', boxShadow: '0 0 20px rgba(34,197,94,0.4)' }}>
+                  Додати до кошика
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }

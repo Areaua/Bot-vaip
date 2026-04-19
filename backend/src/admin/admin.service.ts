@@ -4,10 +4,10 @@ import { BotService } from '../bot/bot.service';
 import { randomBytes } from 'crypto';
 
 const STATUS_MSG: Record<string, string> = {
-  CONFIRMED:  '✅ Ваше замовлення підтверджено\\! Готуємо до відправки\\.',
-  SHIPPED:    '🚚 Ваше замовлення відправлено\\! Очікуйте доставку\\.',
-  DELIVERED:  '📦 Ваше замовлення доставлено\\! Дякуємо за покупку\\! ⚡',
-  CANCELLED:  '❌ На жаль, ваше замовлення скасовано\\. Зверніться до підтримки\\.',
+  CONFIRMED: '✅ Ваше замовлення <b>підтверджено</b>! Готуємо до відправки.',
+  SHIPPED:   '🚚 Ваше замовлення <b>відправлено</b>! Очікуйте доставку.',
+  DELIVERED: '📦 Ваше замовлення <b>доставлено</b>! Дякуємо за покупку! ⚡',
+  CANCELLED: '❌ На жаль, ваше замовлення <b>скасовано</b>. Зверніться до підтримки.',
 };
 
 @Injectable()
@@ -111,7 +111,7 @@ export class AdminService {
       const name = order.user.firstName ?? order.user.username ?? 'Клієнт';
       await this.bot.sendMessage(
         order.user.telegramId,
-        `⚡ *VOLT VAPE* — Замовлення \\#${id}\n\nПривіт, ${name}\\!\n${msg}`,
+        `⚡ <b>VOLT VAPE</b> — Замовлення #${id}\n\nПривіт, ${name}!\n${msg}`,
       );
     }
 

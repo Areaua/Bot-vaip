@@ -20,8 +20,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     await this.bot.stop();
   }
 
-  // ── /start ──────────────────────────────────────────────────────────────
   private setupHandlers() {
+    // ── /start ──────────────────────────────────────────────────────────────
     this.bot.command('start', async (ctx) => {
       const tgUser = ctx.from;
       if (!tgUser) return;
@@ -36,29 +36,24 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
           tgUser.first_name,
           referralCode,
         );
-      } catch { /* user already exists — ignore */ }
+      } catch { /* user already exists */ }
 
       const name = tgUser.first_name ?? 'друже';
       const miniappUrl = process.env.MINIAPP_URL ?? '';
-
-      const keyboard = new InlineKeyboard()
-        .webApp('🛍 Відкрити VOLT VAPE', miniappUrl);
+      const keyboard = new InlineKeyboard().webApp('🛍 Відкрити VOLT VAPE', miniappUrl);
 
       await ctx.reply(
-        `⚡ *Ласкаво просимо до VOLT VAPE, ${name}\\!*\n\n` +
+        `⚡ <b>Ласкаво просимо до VOLT VAPE, ${name}!</b>\n\n` +
         `🎡 Крути колесо щодня — вигравай знижки та промокоди\n` +
         `🛍 Купуй преміальні рідини та одноразки\n` +
         `⭐ Накопичуй бали та отримуй знижки\n` +
         `👥 Запрошуй друзів — +50 балів за кожного\n\n` +
         `Натисни кнопку нижче щоб відкрити магазин:`,
-        {
-          parse_mode: 'MarkdownV2',
-          reply_markup: keyboard,
-        },
+        { parse_mode: 'HTML', reply_markup: keyboard },
       );
     });
 
-    // ── /profile ───────────────────────────────────────────────────────────
+    // ── /profile ────────────────────────────────────────────────────────────
     this.bot.command('profile', async (ctx) => {
       const tgUser = ctx.from;
       if (!tgUser) return;
@@ -66,7 +61,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       try {
         const profile = await this.usersService.getProfile(BigInt(tgUser.id));
         if (!profile) {
-          await ctx.reply('Профіль не знайдено. Спочатку відкрийте магазин /start');
+          await ctx.reply('Профіль не знайдено. Відкрийте магазин через /start');
           return;
         }
 
@@ -74,19 +69,20 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         const keyboard = new InlineKeyboard().webApp('⭐ Відкрити профіль', miniappUrl);
 
         await ctx.reply(
-          `⚡ *Ваш профіль VOLT VAPE*\n\n` +
+          `⚡ <b>Ваш профіль VOLT VAPE</b>\n\n` +
           `👤 ${profile.firstName ?? profile.username ?? 'Гравець'}\n` +
-          `⭐ Баланс: *${profile.bonusBalance} балів*\n` +
+          `⭐ Баланс: <b>${profile.bonusBalance} балів</b>\n` +
           `🎡 Спінів: ${profile.spinLogs?.length ?? 0}\n` +
           `📦 Замовлень: ${profile.orders?.length ?? 0}\n\n` +
-          `Реферальний код: \`${profile.referralCode}\``,
-          { parse_mode: 'MarkdownV2', reply_markup: keyboard },
+          `Реферальний код: <code>${profile.referralCode}</code>`,
+          { parse_mode: 'HTML', reply_markup: keyboard },
         );
       } catch {
         await ctx.reply('Виникла помилка. Спробуйте ще раз.');
       }
     });
 
+    // ── будь-яке інше повідомлення ───────────────────────────────────────────
     this.bot.on('message', async (ctx) => {
       if (ctx.message.text && !ctx.message.text.startsWith('/')) {
         const miniappUrl = process.env.MINIAPP_URL ?? '';
@@ -100,10 +96,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  // ── Відправка повідомлення з коду ──────────────────────────────────────
   async sendMessage(chatId: bigint, text: string) {
     try {
-      await this.bot.api.sendMessage(Number(chatId), text, { parse_mode: 'MarkdownV2' });
+      await this.bot.api.sendMessage(Number(chatId), text, { parse_mode: 'HTML' });
     } catch (e: any) {
       this.logger.warn(`Failed to send message to ${chatId}: ${e.message}`);
     }
