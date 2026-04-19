@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -20,6 +20,13 @@ export class UsersController {
   @Post('daily-bonus')
   async dailyBonus(@Body() body: { telegramId: string }) {
     return this.usersService.claimDailyBonus(BigInt(body.telegramId));
+  }
+
+  @Get('balance')
+  async balance(@Query('telegramId') telegramId: string) {
+    const id = telegramId
+    const user = await this.usersService.getProfile(BigInt(id))
+    return { bonusBalance: user?.bonusBalance ?? 0 }
   }
 
   @Get(':telegramId/profile')

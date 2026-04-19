@@ -16,7 +16,7 @@ const PRIZES = [
   { label: '🎯 Chaser',            color: '#0d2d0d' },
 ]
 
-interface Props { telegramId: string }
+interface Props { telegramId: string; onDone?: () => void }
 
 function prizeIcon(type: string, value: number) {
   if (type === 'BONUS_POINTS') return `+${value}`
@@ -34,7 +34,7 @@ function prizeLabel(type: string) {
   return 'Chaser 10мл'
 }
 
-export default function WheelGame({ telegramId }: Props) {
+export default function WheelGame({ telegramId, onDone }: Props) {
   const canvasRef  = useRef<HTMLCanvasElement>(null)
   const rotRef     = useRef(0)
   const [spinning, setSpinning] = useState(false)
@@ -149,7 +149,7 @@ export default function WheelGame({ telegramId }: Props) {
   // ── збір бонусу з анімацією ──────────────────────────────────
   const handleCollect = () => {
     setCollecting(true)
-    setTimeout(() => { setPrize(null); setCollecting(false) }, 900)
+    setTimeout(() => { setPrize(null); setCollecting(false); onDone?.() }, 900)
   }
 
   // ── рендер: завжди малюємо колесо, приз — overlay ───────────
