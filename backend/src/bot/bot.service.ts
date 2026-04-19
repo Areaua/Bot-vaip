@@ -56,6 +56,27 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       );
     });
 
+    // ── /reply <telegramId> <text> — відповідь адміна юзеру ────────────────
+    this.bot.command('reply', async (ctx) => {
+      const adminChatId = process.env.ADMIN_CHAT_ID
+      if (!ctx.from || String(ctx.from.id) !== adminChatId) return
+      const parts = (ctx.match as string ?? '').split(' ')
+      const targetId = parts[0]
+      const text = parts.slice(1).join(' ')
+      if (!targetId || !text) {
+        await ctx.reply('Використання: /reply 123456789 текст відповіді')
+        return
+      }
+      try {
+        await this.bot.api.sendMessage(Number(targetId),
+          `💬 <b>Відповідь підтримки VOLT VAPE:</b>\n\n${text}`,
+          { parse_mode: 'HTML' })
+        await ctx.reply('✅ Відповідь надіслана')
+      } catch {
+        await ctx.reply('❌ Не вдалось надіслати')
+      }
+    })
+
     // ── /profile ────────────────────────────────────────────────────────────
     this.bot.command('profile', async (ctx) => {
       const tgUser = ctx.from;

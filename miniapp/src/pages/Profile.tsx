@@ -77,7 +77,12 @@ export default function Profile({ telegramId, onNavigate }: Props) {
   const [copied, setCopied] = useState(false)
   const [reviewOrderId, setReviewOrderId] = useState<number | null>(null)
   const [reviewText, setReviewText] = useState('')
-  const [reviewSent, setReviewSent] = useState<number[]>([])
+  const [reviewSent, setReviewSent] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`volt_reviews_${telegramId}`) || '[]') } catch { return [] }
+  })
+  const [supportOpen, setSupportOpen] = useState(false)
+  const [supportText, setSupportText] = useState('')
+  const [supportSent, setSupportSent] = useState(false)
 
   useEffect(() => {
     axios.get(`${API_URL}/users/${telegramId}/profile`)
@@ -90,10 +95,22 @@ export default function Profile({ telegramId, onNavigate }: Props) {
     if (!reviewText.trim() || !reviewOrderId) return
     try {
       await axios.post(`${API_URL}/orders/${reviewOrderId}/review`, { telegramId, text: reviewText })
-      setReviewSent(s => [...s, reviewOrderId])
+      const next = [...reviewSent, reviewOrderId]
+      setReviewSent(next)
+      localStorage.setItem(`volt_reviews_${telegramId}`, JSON.stringify(next))
     } catch {}
     setReviewOrderId(null)
     setReviewText('')
+  }
+
+  const submitSupport = async () => {
+    if (!supportText.trim()) return
+    try {
+      await axios.post(`${API_URL}/users/support`, { telegramId, text: supportText })
+      setSupportSent(true)
+      setSupportText('')
+      setTimeout(() => { setSupportOpen(false); setSupportSent(false) }, 2000)
+    } catch {}
   }
 
   const refLink = `https://t.me/${BOT_USERNAME}?start=ref_${profile?.referralCode ?? ''}`
@@ -261,16 +278,29 @@ export default function Profile({ telegramId, onNavigate }: Props) {
       <div style={{ background: '#111', borderRadius: 16, border: '1px solid #1f1f1f', padding: '16px', marginBottom: 12 }}>
         <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>💬 Підтримка</p>
         <p style={{ color: '#555', fontSize: 13, marginBottom: 12 }}>Є питання або проблема? Напишіть нам — відповімо в бот.</p>
-        <button
-          className="btn"
-          onClick={() => {
-            const tg = (window as any).Telegram?.WebApp
-            if (tg?.openTelegramLink) tg.openTelegramLink(`https://t.me/${BOT_USERNAME}`)
-            else window.open(`https://t.me/${BOT_USERNAME}`, '_blank')
-          }}
-          style={{ background: '#1a1a1a', border: '1px solid #22C55E44', borderRadius: 12, color: '#22C55E', fontWeight: 700, fontSize: 14, padding: '12px 0', cursor: 'pointer', width: '100%' }}>
-          ✉️ Написати в підтримку
-        </button>
+        {!supportOpen ? (
+          <button onClick={() => setSupportOpen(true)}
+            style={{ background: '#1a1a1a', border: '1px solid #22C55E44', borderRadius: 12, color: '#22C55E', fontWeight: 700, fontSize: 14, padding: '12px 0', cursor: 'pointer', width: '100%' }}>
+            ✉️ Написати в підтримку
+          </button>
+        ) : supportSent ? (
+          <p style={{ color: '#22C55E', textAlign: 'center', fontWeight: 700 }}>✅ Повідомлення надіслано!</p>
+        ) : (
+          <div>
+            <textarea value={supportText} onChange={e => setSupportText(e.target.value)}
+              placeholder="Опишіть ваше питання..."
+              rows={3}
+              style={{ width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 14, outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setSupportOpen(false); setSupportText('') }}
+                style={{ flex: 1, background: '#1a1a1a', border: 'none', borderRadius: 10, padding: '11px 0', color: '#888', fontSize: 14, cursor: 'pointer' }}>Скасувати</button>
+              <button onClick={submitSupport} disabled={!supportText.trim()}
+                style={{ flex: 2, background: supportText.trim() ? '#22C55E' : '#1a1a1a', border: 'none', borderRadius: 10, padding: '11px 0', color: supportText.trim() ? '#000' : '#555', fontWeight: 700, fontSize: 14, cursor: supportText.trim() ? 'pointer' : 'not-allowed' }}>
+                Надіслати →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Кнопка магазину */}
