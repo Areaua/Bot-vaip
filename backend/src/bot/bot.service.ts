@@ -7,6 +7,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(BotService.name);
   readonly bot: Bot;
 
+  // msgId відповіді адміна → telegramId юзера
+  private readonly supportMap = new Map<number, bigint>();
+
   constructor(private usersService: UsersService) {
     this.bot = new Bot(process.env.BOT_TOKEN!);
     this.setupHandlers();
@@ -82,12 +85,58 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       }
     });
 
-    // ── будь-яке інше повідомлення ───────────────────────────────────────────
+    // ── Відповідь адміна на forwarded повідомлення → переслати юзеру ────────
     this.bot.on('message', async (ctx) => {
-      if (ctx.message.text && !ctx.message.text.startsWith('/')) {
+      const from = ctx.from;
+      if (!from) return;
+
+      const adminChatId = process.env.ADMIN_CHAT_ID;
+      const isAdmin = adminChatId && String(from.id) === adminChatId;
+
+      // Адмін відповідає на forwarded — переслати юзеру
+      if (isAdmin && ctx.message.reply_to_message) {
+        const replyToId = ctx.message.reply_to_message.message_id;
+        const userTgId = this.supportMap.get(replyToId);
+        if (userTgId) {
+          const text = ctx.message.text ?? ctx.message.caption ?? '';
+          if (text) {
+            await this.bot.api.sendMessage(
+              Number(userTgId),
+              `💬 <b>Відповідь підтримки VOLT VAPE:</b>\n\n${text}`,
+              { parse_mode: 'HTML' },
+            );
+            await ctx.react('👍').catch(() => {});
+          }
+          return;
+        }
+      }
+
+      // Звичайне повідомлення юзера → переслати адміну
+      if (!isAdmin && ctx.message.text && !ctx.message.text.startsWith('/')) {
         const miniappUrl = process.env.MINIAPP_URL ?? '';
         const keyboard = new InlineKeyboard().webApp('🛍 Відкрити магазин', miniappUrl);
-        await ctx.reply('Скористайтесь магазином щоб зробити замовлення:', { reply_markup: keyboard });
+
+        if (adminChatId && /^\d+$/.test(adminChatId)) {
+          const name = from.first_name ?? from.username ?? 'Користувач';
+          const tag  = from.username ? ` (@${from.username})` : '';
+          const forwarded = await this.bot.api.sendMessage(
+            Number(adminChatId),
+            `💬 <b>Повідомлення від ${name}${tag}</b> [<code>${from.id}</code>]:\n\n${ctx.message.text}\n\n<i>Відповідайте на це повідомлення щоб написати клієнту</i>`,
+            { parse_mode: 'HTML' },
+          );
+          // Зберегти mapping: messageId → telegramId юзера
+          this.supportMap.set(forwarded.message_id, BigInt(from.id));
+          // Очистити старі записи (зберігаємо max 500)
+          if (this.supportMap.size > 500) {
+            const firstKey = this.supportMap.keys().next().value;
+            this.supportMap.delete(firstKey);
+          }
+        }
+
+        await ctx.reply(
+          '✉️ Ваше повідомлення надіслано підтримці. Незабаром вам відповідять!',
+          { reply_markup: keyboard },
+        );
       }
     });
 

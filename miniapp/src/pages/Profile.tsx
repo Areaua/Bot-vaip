@@ -75,6 +75,9 @@ export default function Profile({ telegramId, onNavigate }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [reviewOrderId, setReviewOrderId] = useState<number | null>(null)
+  const [reviewText, setReviewText] = useState('')
+  const [reviewSent, setReviewSent] = useState<number[]>([])
 
   useEffect(() => {
     axios.get(`${API_URL}/users/${telegramId}/profile`)
@@ -82,6 +85,16 @@ export default function Profile({ telegramId, onNavigate }: Props) {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [telegramId])
+
+  const submitReview = async () => {
+    if (!reviewText.trim() || !reviewOrderId) return
+    try {
+      await axios.post(`${API_URL}/orders/${reviewOrderId}/review`, { telegramId, text: reviewText })
+      setReviewSent(s => [...s, reviewOrderId])
+    } catch {}
+    setReviewOrderId(null)
+    setReviewText('')
+  }
 
   const refLink = `https://t.me/${BOT_USERNAME}?start=ref_${profile?.referralCode ?? ''}`
 
@@ -94,9 +107,9 @@ export default function Profile({ telegramId, onNavigate }: Props) {
 
   const prizeIcon = (type: string, value: number) => {
     if (type === 'BONUS_POINTS') return `+${value} балів`
-    if (type === 'DISCOUNT') return `-${value}%`
+    if (type === 'DISCOUNT') return `${value}% знижка`
     if (type === 'FREE_DELIVERY') return '🚚 Доставка'
-    if (type === 'PROMO_CODE') return `-${value}%`
+    if (type === 'PROMO_CODE') return `${value}% промокод`
     return '🎁 Приз'
   }
 
@@ -179,7 +192,7 @@ export default function Profile({ telegramId, onNavigate }: Props) {
                 <p style={{ color: '#22C55E', fontWeight: 700, fontSize: 14, fontFamily: 'monospace' }}>{p.code}</p>
                 <p style={{ color: '#555', fontSize: 11, marginTop: 2 }}>до {new Date(p.expiresAt).toLocaleDateString('uk-UA')}</p>
               </div>
-              <span style={{ background: '#22C55E', color: '#000', fontWeight: 700, fontSize: 13, padding: '4px 10px', borderRadius: 50 }}>-{p.discount}%</span>
+              <span style={{ background: '#22C55E', color: '#000', fontWeight: 700, fontSize: 13, padding: '4px 10px', borderRadius: 50 }}>{p.discount}%</span>
             </div>
           ))}
         </div>
@@ -212,6 +225,15 @@ export default function Profile({ telegramId, onNavigate }: Props) {
                 {(order.bonusPointsUsed ?? 0) > 0 && <span style={{ color: '#86efac', fontSize: 11 }}>⭐ -{order.bonusPointsUsed} балів</span>}
                 {order.deliveryMethod && <span style={{ color: '#555', fontSize: 11 }}>🚚 {order.deliveryMethod.replace('NOVA_POSHTA','Нова Пошта').replace('UKRPOSHTA','Укрпошта').replace('COURIER','Кур\'єр').replace('PICKUP','Самовивіз')}</span>}
               </div>
+              {order.status === 'DELIVERED' && !reviewSent.includes(order.id) && (
+                <button onClick={() => { setReviewOrderId(order.id); setReviewText('') }}
+                  style={{ marginTop: 10, background: 'none', border: '1px solid #22C55E33', borderRadius: 8, color: '#22C55E', fontSize: 12, padding: '6px 12px', cursor: 'pointer', width: '100%' }}>
+                  ✍️ Залишити відгук
+                </button>
+              )}
+              {reviewSent.includes(order.id) && (
+                <p style={{ color: '#555', fontSize: 11, marginTop: 8, textAlign: 'center' }}>✅ Відгук надіслано, дякуємо!</p>
+              )}
             </div>
           ))}
         </div>
@@ -239,6 +261,27 @@ export default function Profile({ telegramId, onNavigate }: Props) {
       <button className="btn" onClick={() => onNavigate('shop')} style={{ background: '#22C55E', color: '#000', border: 'none', borderRadius: 50, padding: '16px 0', fontWeight: 700, fontSize: 16, cursor: 'pointer', width: '100%', boxShadow: '0 0 20px rgba(34,197,94,0.4)' }}>
         🛍 Перейти до магазину
       </button>
+
+      {/* Модалка відгуку */}
+      {reviewOrderId && (
+        <div onClick={() => setReviewOrderId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, padding: 24, animation: 'slideUp 0.25s ease-out' }}>
+            <p style={{ color: '#fff', fontWeight: 700, fontSize: 17, marginBottom: 6 }}>✍️ Ваш відгук</p>
+            <p style={{ color: '#555', fontSize: 13, marginBottom: 16 }}>Замовлення #{reviewOrderId}</p>
+            <textarea
+              value={reviewText}
+              onChange={e => setReviewText(e.target.value)}
+              placeholder="Розкажіть про ваш досвід..."
+              rows={4}
+              style={{ width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 12, padding: '12px 14px', color: '#fff', fontSize: 14, outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+              <button onClick={() => setReviewOrderId(null)} style={{ flex: 1, background: '#1a1a1a', border: 'none', borderRadius: 12, padding: '13px 0', color: '#888', fontSize: 15, cursor: 'pointer' }}>Скасувати</button>
+              <button onClick={submitReview} disabled={!reviewText.trim()} style={{ flex: 2, background: reviewText.trim() ? '#22C55E' : '#1a1a1a', border: 'none', borderRadius: 12, padding: '13px 0', color: reviewText.trim() ? '#000' : '#555', fontWeight: 700, fontSize: 15, cursor: reviewText.trim() ? 'pointer' : 'not-allowed' }}>Надіслати →</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

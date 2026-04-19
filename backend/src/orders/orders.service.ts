@@ -119,6 +119,19 @@ export class OrdersService {
     return order;
   }
 
+  async submitReview(orderId: number, telegramId: bigint, text: string) {
+    const user = await this.prisma.user.findUnique({ where: { telegramId } });
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+    if (adminChatId && /^\d+$/.test(adminChatId)) {
+      const name = user?.firstName ?? user?.username ?? String(telegramId);
+      await this.bot.sendMessage(
+        BigInt(adminChatId),
+        `⭐ <b>Відгук на замовлення #${orderId}</b>\n👤 ${name}\n\n${text}`,
+      );
+    }
+    return { ok: true };
+  }
+
   async getUserOrders(telegramId: bigint) {
     const user = await this.prisma.user.findUnique({ where: { telegramId } });
     if (!user) throw new BadRequestException('Користувач не знайдений');

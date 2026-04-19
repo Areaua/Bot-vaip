@@ -37,4 +37,12 @@ export class OrdersController {
   async userOrders(@Param('telegramId') telegramId: string) {
     return this.ordersService.getUserOrders(BigInt(telegramId));
   }
+
+  @Post(':id/review')
+  async review(
+    @Param('id') id: string,
+    @Body() body: { telegramId: string; text: string },
+  ) {
+    return this.ordersService.submitReview(Number(id), BigInt(body.telegramId), body.text);
+  }
 }

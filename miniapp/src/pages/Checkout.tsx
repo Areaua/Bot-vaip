@@ -235,7 +235,7 @@ export default function Checkout({ items, total, onBack, onOrder, bonusBalance, 
         )}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ color: '#888' }}>Доставка</span>
-          <span style={{ color: '#22C55E' }}>Безкоштовно</span>
+          <span style={{ color: '#f59e0b', fontSize: 12 }}>Розраховується окремо</span>
         </div>
         <div style={{ borderTop: '1px solid #1f1f1f', paddingTop: 10, marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: '#fff', fontWeight: 700 }}>Разом</span>
