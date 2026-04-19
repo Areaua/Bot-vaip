@@ -257,6 +257,22 @@ export default function Profile({ telegramId, onNavigate }: Props) {
         </div>
       )}
 
+      {/* Підтримка */}
+      <div style={{ background: '#111', borderRadius: 16, border: '1px solid #1f1f1f', padding: '16px', marginBottom: 12 }}>
+        <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>💬 Підтримка</p>
+        <p style={{ color: '#555', fontSize: 13, marginBottom: 12 }}>Є питання або проблема? Напишіть нам — відповімо в бот.</p>
+        <button
+          className="btn"
+          onClick={() => {
+            const tg = (window as any).Telegram?.WebApp
+            if (tg?.openTelegramLink) tg.openTelegramLink(`https://t.me/${BOT_USERNAME}`)
+            else window.open(`https://t.me/${BOT_USERNAME}`, '_blank')
+          }}
+          style={{ background: '#1a1a1a', border: '1px solid #22C55E44', borderRadius: 12, color: '#22C55E', fontWeight: 700, fontSize: 14, padding: '12px 0', cursor: 'pointer', width: '100%' }}>
+          ✉️ Написати в підтримку
+        </button>
+      </div>
+
       {/* Кнопка магазину */}
       <button className="btn" onClick={() => onNavigate('shop')} style={{ background: '#22C55E', color: '#000', border: 'none', borderRadius: 50, padding: '16px 0', fontWeight: 700, fontSize: 16, cursor: 'pointer', width: '100%', boxShadow: '0 0 20px rgba(34,197,94,0.4)' }}>
         🛍 Перейти до магазину
