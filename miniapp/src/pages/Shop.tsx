@@ -15,9 +15,10 @@ interface Props {
   initCategory?: string
   telegramId: string
   products: any[]
+  onPromoApplied?: (discount: number, code: string) => void
 }
 
-export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі', telegramId, products }: Props) {
+export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі', telegramId, products, onPromoApplied }: Props) {
   const [category, setCategory]       = useState(initCategory)
   const [search, setSearch]           = useState('')
   const [promo, setPromo]             = useState('')
@@ -41,6 +42,7 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
       const r = await axios.post(`${API_URL}/promo/check`, { code: promo, telegramId })
       setDiscount(r.data.discount)
       setPromoStatus('ok')
+      onPromoApplied?.(r.data.discount, promo)
     } catch { setPromoStatus('error') }
   }
 
@@ -101,7 +103,7 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
               onClick={() => setModal(product)}
               style={{ background: 'linear-gradient(135deg, #0a2a0a, #111d11)', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}>
               {product.imageUrl
-                ? <img src={`${API_URL}${product.imageUrl}`} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <img src={product.imageUrl.startsWith('data:') ? product.imageUrl : `${API_URL}${product.imageUrl}`} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : <span style={{ fontSize: 48 }}>{CAT_EMOJI[product.category] ?? '📦'}</span>
               }
               {cart[product.id] > 0 && (
@@ -162,7 +164,7 @@ export default function Shop({ onNavigate, cart, setCart, initCategory = 'Всі
             {/* Фото */}
             <div style={{ background: 'linear-gradient(135deg, #0a2a0a, #111d11)', height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', borderRadius: '20px 20px 0 0' }}>
               {modal.imageUrl
-                ? <img src={`${API_URL}${modal.imageUrl}`} alt={modal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <img src={modal.imageUrl.startsWith('data:') ? modal.imageUrl : `${API_URL}${modal.imageUrl}`} alt={modal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : <span style={{ fontSize: 80 }}>{CAT_EMOJI[modal.category] ?? '📦'}</span>
               }
               <button

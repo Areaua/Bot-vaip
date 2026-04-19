@@ -5,9 +5,7 @@ import {
   UseInterceptors, UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { randomBytes } from 'crypto';
-import * as path from 'path';
+import { memoryStorage } from 'multer';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
@@ -61,20 +59,12 @@ export class AdminController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: path.join(process.cwd(), 'uploads'),
-      filename: (_req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `${randomBytes(8).toString('hex')}${ext}`);
-      },
-    }),
+    storage: memoryStorage(),
     fileFilter: (_req: any, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
-      if (!file.mimetype.startsWith('image/')) {
-        return cb(new Error('Only image files are allowed'), false);
-      }
+      if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image files are allowed'), false);
       cb(null, true);
     },
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 2 * 1024 * 1024 },
   }))
   upload(
     @Headers('x-admin-key') key: string,
@@ -82,7 +72,8 @@ export class AdminController {
   ) {
     this.auth(key);
     if (!file) throw new BadRequestException('Файл не завантажено');
-    return { url: `/uploads/${file.filename}` };
+    const base64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    return { url: base64 };
   }
 
   @Get('orders')

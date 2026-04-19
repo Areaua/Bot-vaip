@@ -133,6 +133,9 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       }
 
       // Звичайне повідомлення юзера → переслати адміну
+      // Ігноруємо відповіді на повідомлення самого бота (статуси замовлень тощо)
+      if (ctx.message.reply_to_message?.from?.is_bot) return;
+
       if (!isAdmin && ctx.message.text && !ctx.message.text.startsWith('/')) {
         const miniappUrl = process.env.MINIAPP_URL ?? '';
         const keyboard = new InlineKeyboard().webApp('🛍 Відкрити магазин', miniappUrl);

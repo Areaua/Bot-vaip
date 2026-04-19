@@ -31,6 +31,8 @@ function MainApp() {
   const [products, setProducts] = useState<any[]>([])
   const [bonusBalance, setBonusBalance] = useState(0)
   const [notifications, setNotifications] = useState<string[]>([])
+  const [promoDiscount, setPromoDiscount] = useState(0)
+  const [promoCode, setPromoCode] = useState('')
 
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cart)) }, [cart, cartKey])
 
@@ -78,7 +80,8 @@ function MainApp() {
   }, [page, telegramId])
 
   const cartCount = Object.values(cart).reduce((a, b) => a + b, 0)
-  const cartTotal = products.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0)
+  const cartRaw   = products.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0)
+  const cartTotal = promoDiscount > 0 ? Math.round(cartRaw * (1 - promoDiscount / 100)) : cartRaw
   const cartItems = products
     .filter(p => cart[p.id] > 0)
     .map(p => ({ ...p, qty: cart[p.id], emoji: CAT_EMOJI[p.category] ?? '📦' }))
@@ -94,10 +97,12 @@ function MainApp() {
 
   const handleOrder = (bonusPoints: number, delivery: { customerName: string; phone: string; deliveryMethod: string; deliveryAddress: string; comment: string }) => {
     const items = cartItems.map(i => ({ productId: i.id, quantity: i.qty }))
-    axios.post(`${API_URL}/orders`, { telegramId, items, bonusPoints, delivery })
+    axios.post(`${API_URL}/orders`, { telegramId, items, promoCode, bonusPoints, delivery })
       .then(() => { fetchBalance() })
       .catch(() => {})
     setCart({})
+    setPromoDiscount(0)
+    setPromoCode('')
     localStorage.removeItem(cartKey)
     setPage('home')
     alert('Замовлення оформлено! Менеджер звяжеться з вами.')
@@ -119,7 +124,7 @@ function MainApp() {
       <style>{`@keyframes slideDown { from { transform: translateY(-20px); opacity:0 } to { transform: translateY(0); opacity:1 } }`}</style>
       {page === 'home'     && <Home onNavigate={handleNavigate} cartCount={cartCount} />}
       {page === 'wheel'    && <WheelGame telegramId={telegramId} onDone={() => { fetchBalance(); setPage('home') }} />}
-      {page === 'shop'     && <Shop onNavigate={handleNavigate} cart={cart} setCart={setCart} initCategory={initCategory} telegramId={telegramId} products={products} />}
+      {page === 'shop'     && <Shop onNavigate={handleNavigate} cart={cart} setCart={setCart} initCategory={initCategory} telegramId={telegramId} products={products} onPromoApplied={(d, c) => { setPromoDiscount(d); setPromoCode(c) }} />}
       {page === 'checkout' && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} telegramId={telegramId} />}
       {page === 'cart'     && <Checkout items={cartItems} total={cartTotal} onBack={() => setPage('shop')} onOrder={handleOrder} bonusBalance={bonusBalance} telegramId={telegramId} />}
       {page === 'profile'  && <Profile telegramId={telegramId} onNavigate={handleNavigate} />}
