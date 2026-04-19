@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BotService } from '../bot/bot.service';
+import { RedisService } from '../redis/redis.service';
 import { randomBytes } from 'crypto';
 
 const STATUS_MSG: Record<string, string> = {
@@ -15,6 +16,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private bot: BotService,
+    private redis: RedisService,
   ) {}
 
   async getStats() {
@@ -123,7 +125,7 @@ export class AdminService {
     if (!user) throw new NotFoundException('Користувач не знайдений');
 
     const code = `ADMIN-${randomBytes(3).toString('hex').toUpperCase()}`;
-    return this.prisma.userPromo.create({
+    const promo = await this.prisma.userPromo.create({
       data: {
         userId: user.id,
         code,
@@ -132,14 +134,35 @@ export class AdminService {
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
+
+    const msg = `🎟 Адміністратор видав вам промокод <b>${code}</b> на знижку <b>${discount}%</b>!\n\nЗастосуйте його в магазині. Дійсний 30 днів.`;
+    await this.bot.sendMessage(telegramId, msg);
+    await this.storeNotification(telegramId, msg);
+    return promo;
   }
 
   async grantBonus(telegramId: bigint, points: number) {
     const user = await this.prisma.user.findUnique({ where: { telegramId } });
     if (!user) throw new NotFoundException('Користувач не знайдений');
-    return this.prisma.user.update({
+
+    const updated = await this.prisma.user.update({
       where: { telegramId },
       data: { bonusBalance: { increment: points } },
     });
+
+    const msg = `⭐ Адміністратор нарахував вам <b>${points} бонусних балів</b>!\n\nПоточний баланс: <b>${updated.bonusBalance} балів</b>.`;
+    await this.bot.sendMessage(telegramId, msg);
+    await this.storeNotification(telegramId, msg);
+    return updated;
+  }
+
+  private async storeNotification(telegramId: bigint, text: string) {
+    const key = `notif:${telegramId}`;
+    try {
+      const raw = await this.redis.get(key);
+      const list: string[] = raw ? JSON.parse(raw) : [];
+      list.push(text);
+      await this.redis.set(key, JSON.stringify(list), 86400 * 7);
+    } catch {}
   }
 }

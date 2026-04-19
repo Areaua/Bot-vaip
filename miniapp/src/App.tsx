@@ -30,6 +30,7 @@ function MainApp() {
   const [initCategory, setInitCategory] = useState('Всі')
   const [products, setProducts] = useState<any[]>([])
   const [bonusBalance, setBonusBalance] = useState(0)
+  const [notifications, setNotifications] = useState<string[]>([])
 
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cart)) }, [cart, cartKey])
 
@@ -57,6 +58,14 @@ function MainApp() {
 
     fetchBalance()
     axios.get(`${API_URL}/products`).then(r => setProducts(r.data)).catch(() => {})
+
+    axios.get(`${API_URL}/users/notifications`, { params: { telegramId } })
+      .then(r => {
+        if (r.data.notifications?.length) {
+          setNotifications(r.data.notifications)
+          axios.post(`${API_URL}/users/notifications/read`, { telegramId }).catch(() => {})
+        }
+      }).catch(() => {})
   }, [telegramId, fetchBalance])
 
   // Оновлюємо баланс коли виходимо з колеса або профілю
@@ -96,6 +105,18 @@ function MainApp() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D' }}>
+      {notifications.length > 0 && (
+        <div style={{ position: 'fixed', top: 16, left: 16, right: 16, zIndex: 999, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {notifications.map((n, i) => (
+            <div key={i} style={{ background: '#0a2a0a', border: '1px solid #22C55E', borderRadius: 14, padding: '12px 16px', boxShadow: '0 0 20px rgba(34,197,94,0.3)', animation: 'slideDown 0.3s ease-out', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 18 }}>🎁</span>
+              <p style={{ color: '#86efac', fontSize: 13, lineHeight: 1.5, flex: 1 }} dangerouslySetInnerHTML={{ __html: n.replace(/<b>/g,'<b style="color:#22C55E">') }} />
+              <button onClick={() => setNotifications(ns => ns.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#555', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <style>{`@keyframes slideDown { from { transform: translateY(-20px); opacity:0 } to { transform: translateY(0); opacity:1 } }`}</style>
       {page === 'home'     && <Home onNavigate={handleNavigate} cartCount={cartCount} />}
       {page === 'wheel'    && <WheelGame telegramId={telegramId} onDone={() => { fetchBalance(); setPage('home') }} />}
       {page === 'shop'     && <Shop onNavigate={handleNavigate} cart={cart} setCart={setCart} initCategory={initCategory} telegramId={telegramId} products={products} />}
