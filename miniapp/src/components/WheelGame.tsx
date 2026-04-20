@@ -50,8 +50,7 @@ export default function WheelGame({ telegramId, onDone }: Props) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
     const dpr = window.devicePixelRatio || 1
-    // Розмір колеса: максимум 300px, але не більше ніж дозволяє висота вікна
-    const logical = Math.min(300, Math.floor(window.innerHeight * 0.42))
+    const logical = 300
     canvas.width  = logical * dpr
     canvas.height = logical * dpr
     canvas.style.width  = `${logical}px`
@@ -157,7 +156,7 @@ export default function WheelGame({ telegramId, onDone }: Props) {
 
   // ── рендер: завжди малюємо колесо, приз — overlay ───────────
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 30%, #0a2a0a 0%, #0D0D0D 65%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 24px 80px', gap: '12px' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 30%, #0a2a0a 0%, #0D0D0D 65%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '24px 24px 80px', gap: '16px', maxWidth: 480, margin: '0 auto', width: '100%' }}>
 
       {/* ── Колесо (завжди в DOM) ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -173,9 +172,9 @@ export default function WheelGame({ telegramId, onDone }: Props) {
         <p style={{ color: '#888', fontSize: 15, textAlign: 'center' }}>Крути щодня та вигравай знижки і суперприз!</p>
       ) : <div style={{ height: 22 }} />}
 
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', marginTop: 20, width: 300, height: 300, flexShrink: 0 }}>
         <div style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '13px solid transparent', borderRight: '13px solid transparent', borderTop: '26px solid #39FF14', filter: 'drop-shadow(0 0 6px #39FF14)', zIndex: 10 }} />
-        <canvas ref={canvasRef} style={{ borderRadius: '50%', display: 'block', width: 300, height: 300 }} />
+        <canvas ref={canvasRef} style={{ borderRadius: '50%', display: 'block' }} />
       </div>
 
       <button
