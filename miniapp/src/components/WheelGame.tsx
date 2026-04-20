@@ -154,7 +154,7 @@ export default function WheelGame({ telegramId, onDone }: Props) {
 
   // ── рендер: завжди малюємо колесо, приз — overlay ───────────
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 30%, #0a2a0a 0%, #0D0D0D 65%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 24px 90px', gap: '20px', overflowY: 'auto' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 30%, #0a2a0a 0%, #0D0D0D 65%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '40px 24px 90px', gap: '20px' }}>
 
       {/* ── Колесо (завжди в DOM) ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
