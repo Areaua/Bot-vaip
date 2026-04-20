@@ -50,13 +50,12 @@ export default function WheelGame({ telegramId, onDone }: Props) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
     const dpr = window.devicePixelRatio || 1
-    const logical = 300
-    if (canvas.width !== logical * dpr) {
-      canvas.width  = logical * dpr
-      canvas.height = logical * dpr
-      canvas.style.width  = `${logical}px`
-      canvas.style.height = `${logical}px`
-    }
+    // Розмір колеса: максимум 300px, але не більше ніж дозволяє висота вікна
+    const logical = Math.min(300, Math.floor(window.innerHeight * 0.42))
+    canvas.width  = logical * dpr
+    canvas.height = logical * dpr
+    canvas.style.width  = `${logical}px`
+    canvas.style.height = `${logical}px`
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     const sz = logical, cx = sz / 2, cy = sz / 2
     const r  = cx - 8
@@ -158,7 +157,7 @@ export default function WheelGame({ telegramId, onDone }: Props) {
 
   // ── рендер: завжди малюємо колесо, приз — overlay ───────────
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 30%, #0a2a0a 0%, #0D0D0D 65%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '40px 24px 90px', gap: '20px' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 30%, #0a2a0a 0%, #0D0D0D 65%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 24px 80px', gap: '12px' }}>
 
       {/* ── Колесо (завжди в DOM) ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
