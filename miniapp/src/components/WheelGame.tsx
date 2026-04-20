@@ -4,16 +4,16 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const PRIZES = [
-  { label: 'Знижка 5%',            color: '#1a3d1a' },
-  { label: 'Знижка 10%',           color: '#1e4d1e' },
-  { label: '50 бонусів',           color: '#1a3d1a' },
-  { label: '100 бонусів',          color: '#1e4d1e' },
-  { label: 'Безкоштовна доставка', color: '#1a3d1a' },
-  { label: 'Промокод -15%',        color: '#1e4d1e' },
-  { label: 'Промокод -25%',        color: '#1a3d1a' },
-  { label: 'Подвійні бонуси',      color: '#1e4d1e' },
-  { label: '25 бонусів',           color: '#1a3d1a' },
-  { label: '🎯 Chaser',            color: '#0d2d0d' },
+  { label: 'Знижка 5%',            color: '#1a4d1a' },
+  { label: 'Знижка 10%',           color: '#0f2e0f' },
+  { label: '50 бонусів',           color: '#1a4d1a' },
+  { label: '100 бонусів',          color: '#0f2e0f' },
+  { label: 'Безкоштовна доставка', color: '#1a4d1a' },
+  { label: 'Промокод -15%',        color: '#0f2e0f' },
+  { label: 'Промокод -25%',        color: '#1a4d1a' },
+  { label: 'Подвійні бонуси',      color: '#0f2e0f' },
+  { label: '25 бонусів',           color: '#1a4d1a' },
+  { label: '🎯 Chaser',            color: '#102810' },
 ]
 
 interface Props { telegramId: string; onDone?: () => void }
@@ -64,6 +64,10 @@ export default function WheelGame({ telegramId, onDone }: Props) {
 
     ctx.clearRect(0, 0, sz, sz)
 
+    // тло колеса — темно-зелений круг щоб сегменти не зливались з фоном
+    ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, 2 * Math.PI)
+    ctx.fillStyle = '#0a1a0a'; ctx.fill()
+
     // glow
     const grd = ctx.createRadialGradient(cx, cy, r - 20, cx, cy, r + 8)
     grd.addColorStop(0, 'rgba(34,197,94,0.15)')
@@ -76,7 +80,7 @@ export default function WheelGame({ telegramId, onDone }: Props) {
       ctx.beginPath(); ctx.moveTo(cx, cy)
       ctx.arc(cx, cy, r, start, end); ctx.closePath()
       ctx.fillStyle = p.color; ctx.fill()
-      ctx.strokeStyle = '#39FF14'; ctx.lineWidth = 1.5; ctx.stroke()
+      ctx.strokeStyle = '#39FF14'; ctx.lineWidth = 2; ctx.stroke()
 
       ctx.save(); ctx.translate(cx, cy)
       const mid = start + seg / 2; ctx.rotate(mid)
