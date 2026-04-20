@@ -4,16 +4,16 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const PRIZES = [
-  { label: 'Знижка 5%',            color: '#1a4d1a' },
-  { label: 'Знижка 10%',           color: '#0f2e0f' },
-  { label: '50 бонусів',           color: '#1a4d1a' },
-  { label: '100 бонусів',          color: '#0f2e0f' },
-  { label: 'Безкоштовна доставка', color: '#1a4d1a' },
-  { label: 'Промокод -15%',        color: '#0f2e0f' },
-  { label: 'Промокод -25%',        color: '#1a4d1a' },
-  { label: 'Подвійні бонуси',      color: '#0f2e0f' },
-  { label: '25 бонусів',           color: '#1a4d1a' },
-  { label: '🎯 Chaser',            color: '#102810' },
+  { label: 'Знижка 5%',            color: '#1a5c1a' },
+  { label: 'Знижка 10%',           color: '#0a200a' },
+  { label: '50 бонусів',           color: '#1a5c1a' },
+  { label: '100 бонусів',          color: '#0a200a' },
+  { label: 'Безкоштовна доставка', color: '#1a5c1a' },
+  { label: 'Промокод -15%',        color: '#0a200a' },
+  { label: 'Промокод -25%',        color: '#1a5c1a' },
+  { label: 'Подвійні бонуси',      color: '#0a200a' },
+  { label: '25 бонусів',           color: '#1a5c1a' },
+  { label: '🎯 Chaser',            color: '#0d2d0d' },
 ]
 
 interface Props { telegramId: string; onDone?: () => void }
@@ -64,9 +64,9 @@ export default function WheelGame({ telegramId, onDone }: Props) {
 
     ctx.clearRect(0, 0, sz, sz)
 
-    // тло колеса — темно-зелений круг щоб сегменти не зливались з фоном
+    // тло колеса
     ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, 2 * Math.PI)
-    ctx.fillStyle = '#0a1a0a'; ctx.fill()
+    ctx.fillStyle = '#050f05'; ctx.fill()
 
     // glow
     const grd = ctx.createRadialGradient(cx, cy, r - 20, cx, cy, r + 8)
@@ -88,8 +88,8 @@ export default function WheelGame({ telegramId, onDone }: Props) {
       const left = norm > Math.PI / 2 && norm < 1.5 * Math.PI
       if (left) { ctx.rotate(Math.PI); ctx.textAlign = 'left' }
       else       { ctx.textAlign = 'right' }
-      ctx.fillStyle = i === 9 ? '#39FF14' : '#86efac'
-      ctx.font = `${i === 9 ? 'bold' : 'normal'} 12px sans-serif`
+      ctx.fillStyle = i === 9 ? '#39FF14' : '#d4ffd4'
+      ctx.font = `bold 11px sans-serif`
       ctx.fillText(p.label, left ? -(r - 8) : r - 8, 4)
       ctx.restore()
     })
